@@ -2,6 +2,7 @@ from apache_ranger.model.ranger_service import *
 from apache_ranger.client.ranger_client import *
 from apache_ranger.model.ranger_policy  import *
 from apache_ranger.exceptions import *
+from RangerClientHttp import *
 from inventory import *
 import logging
 import os
@@ -30,6 +31,20 @@ class RangerPolicyMgm:
 		self.consoleHandler.setFormatter(self.logFormatter)
 		self.rootLogger.addHandler(self.consoleHandler)
 		self.rootLogger.setLevel(logging.INFO)
+
+	def get_group_info(self,groupName,url,auth):
+		r_c_h = RangerClientHttp(url,auth)
+		r_c_h.session.verify = False
+		URI_GET_GROUP='/service/xusers/groups/groupName/{name}'
+		GET_GROUP=API(URI_GET_GROUP,HttpMethod.GET, HTTPStatus.OK)
+
+		try:
+			x=r_c_h.call_api(GET_GROUP.format_path({ 'name': groupName }))
+			self.rootLogger.info("Group {0} found and id is {1}".format(x['name'],x['id']))
+		except AttributeError as e:
+			self.rootLogger.error("Group {} Not found".format(groupName))
+			self.rootLogger.error(e)
+		
 		
 	def get_role_info(self,rolename):
 		try:
@@ -41,6 +56,7 @@ class RangerPolicyMgm:
 			self.rootLogger.error(e)
 
 	def get_policy_info(self,db_name,tbl_name,service_name):
+		return_v = None
 		name="db="+db_name+",tble="+tbl_name 
 		print(name)
 		try:
@@ -48,12 +64,12 @@ class RangerPolicyMgm:
 			print(policies)
 			self.rootLogger.info("Policy {0} Found".format(name))
 			self.rootLogger.info(policies)
+			return_v = policies 
 		except ValueError as e:
 			self.rootLogger.info("Policy Exception {0}".format(e))
+			return_v = None
 			
-			
-		#for policy in policies:
-		#	print('        id: ' + str(policy.id) + ', service: ' + policy.service + ', name: ' + policy.name)
+		return return_v
 
 	def list_service(self):
 		retrieved_service = self.conn.get_service('hive')
@@ -70,12 +86,36 @@ class RangerPolicyMgm:
 		except RangerServiceException as e:
 			self.rootLogger.error("Error while creating Role")
 			self.rootLogger.error(e)
+	def update_policy(self,db_name,tbl_name,role_name,service_name):
+		print("Received rolename is {}".format(role_name))
+		pname="db="+db_name+",tble="+tbl_name
+		policy_info=self.get_policy_info(db_name,tbl_name,service_name)
+		if policy_info is None:
+			self.rootLogger.error("Policy Name {} doesn't exit".format(pname))
+			return None
+		allowItem1          = RangerPolicyItem()
+		allowItem1.roles = [role_name ]
+		allowItem1.accesses = [ RangerPolicyItemAccess({ 'type': 'select' }),
+					RangerPolicyItemAccess({ 'type': 'update' }) ]
+		policy_info.policyItems.append(allowItem1)
 		
+		try:
+			self.rootLogger.info('Updating policy: name=' + pname)
+			updateded_policy = self.conn.update_policy(service_name,pname,policy_info)
+			self.rootLogger.info('Updated policy: name=' + updateded_policy.name + ', id=' + str(updateded_policy.id))
+		except RangerServiceException as e:
+			self.rootLogger.error("Error while Updating Policy")
+			self.rootLogger.error(e)
 	def add_policy(self,db_name,tbl_name,role_name,service_name):
+		pname="db="+db_name+",tble="+tbl_name
+		if self.get_policy_info(db_name,tbl_name,service_name) is not None:
+			self.rootLogger.error("Policy Name {} already exit".format(pname))
+			return None
+			 
 		policy = RangerPolicy()
+		policy.name=pname
 		service = RangerService()
 		service.name = service_name	
-		policy.name="db="+db_name+",tble="+tbl_name
 		policy.service = service.name
 		policy.resources = {'database': RangerPolicyResource({ 'values': [db_name]}),
 				'table':    RangerPolicyResource({ 'values': [tbl_name] }),
@@ -93,14 +133,15 @@ class RangerPolicyMgm:
 		except RangerServiceException as e:
 			self.rootLogger.error("Error while creating Policy")
 			self.rootLogger.error(e)
-
 def main():
 	ranger = RangerClient(ranger_url, ranger_auth)
 	ran = RangerPolicyMgm(ranger,'Dev')
 	#ran.add_policy("sv_hadoop1","laksha122","sv_g_hadoop",'cm_hive')
-	ran.add_policy("sv_hadoop","laksha","sv_g_hadoop",'cm_hive')
-	ran.get_policy_info("sv_hadoop",'laksha','cm_hive')
-	ran.get_role_info('rolename')
+	#ran.add_policy("sv_hadoop","laksha","sv_g_hadoop",'cm_hive')
+	ran.update_policy("sv_hadoop","laksha","kudu",'cm_hive')
+	#ran.get_policy_info("sv_hadoop",'laksha','cm_hive')
+	ran.get_group_info("sv__hadoop",ranger_url,ranger_auth)
+	#ss.get_role('rolename')
 	#ran.create_role("rolename","sv_g_hadoop")
 	#ran.list_service()
 
