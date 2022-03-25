@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>{% block title %} Searching Ranger policies {% endblock %}</h1>
+           <form id='survey-form1' action="#">
+		<label for="title">Select environment</label>
+		<br>
+		<select name="env">
+		<option value="dev">Dev</option>
+		<option value="qa">QA</option>
+		<option value="prod">Prod</option>
+		<option value="all">all</option>
+		</select>
+		</br>
+		<label for="title">Enter the Hive table details (( dbname.table ))</label>
+		<br>
+		<textarea name="tables" cols="40" rows="5"></textarea>
+		</br>
+               <input  type="submit" value="Submit"> </span>
+           </div>
+           </form>
+	  <br>
+	{% if policy_dict1 %}
+		<table class="table">
+		<thead>
+		<tr>
+		<th>Environment</th>
+		<th>Policy Name</th>
+		<th>Roles</th>
+		<th>Permission</th>
+		</tr>
+		</thead>
+		<tbody>
+		{% for tables in policy_dict1 %}
+		<tr>
+		<td>{{ tables['env'] }}</td>
+		<td>{{ tables['name'] }} </td>
+		<td>
+		<table class="table">
+		{% for x in tables['policyItems'] %} 
+			<tr>
+			<td>
+			{% for y in x['roles'] %}
+				{{ y }}
+			{% endfor %}
+			</td>
+			<td>
+			{% for y in x['accesses'] %}
+				{{ y['type'] }}
+			{% endfor %}	
+			</td>
+		</tr>
+		{% endfor %}
+		</table>
+		</td>
+		</tr>
+		{% endfor %}
+		</tbody>
+		</table>
+	{% endif %}
+{% endblock %}

@@ -7,6 +7,7 @@ from inventory import *
 import logging
 import os
 import datetime
+import argparse
 
 class RangerPolicyMgm:
 	def __init__(self,conn,env):
@@ -63,7 +64,7 @@ class RangerPolicyMgm:
 			policies = self.conn.get_policy(service_name,name)	
 			print(policies)
 			self.rootLogger.info("Policy {0} Found".format(name))
-			self.rootLogger.info(policies)
+			#self.rootLogger.info(policies)
 			return_v = policies 
 		except ValueError as e:
 			self.rootLogger.info("Policy Exception {0}".format(e))
@@ -133,9 +134,41 @@ class RangerPolicyMgm:
 		except RangerServiceException as e:
 			self.rootLogger.error("Error while creating Policy")
 			self.rootLogger.error(e)
+def CallRanger(env,dbname,table):
+	print("inside ranger code")
+	if env == 'dev':
+		ranger = RangerClient(ranger_url, ranger_auth)
+	elif env == 'qa':
+		ranger = RangerClient(ranger_url, ranger_auth)
+	elif env == 'prod':
+		ranger = RangerClient(ranger_url, ranger_auth)
+	ran = RangerPolicyMgm(ranger,env)
+	obj = ran.get_policy_info(dbname,table,'cm_hive')
+	tbl = "db={},tbl={}(Not_found)".format(dbname,table)
+	
+	if obj is not None:
+		obj['env'] = env
+		return obj
+	else:
+		obj = {'name':tbl,'env' : env,"policyItems": [{"accesses": [{"type": "NA"}], "roles": ["NA"]}]}
+		return obj
+
 def main():
-	ranger = RangerClient(ranger_url, ranger_auth)
-	ran = RangerPolicyMgm(ranger,'Dev')
+	
+	parser = argparse.ArgumentParser(description='Optional app description')
+	parser.add_argument('env',help="environment name")
+	parser.add_argument('dbname',help='db name')
+	parser.add_argument('table',help='table name')
+	args = parser.parse_args()
+	if args.env == 'dev':
+		ranger = RangerClient(ranger_url, ranger_auth)
+	elif args.env == 'qa':
+		ranger = RangerClient(ranger_url, ranger_auth)
+	elif args.env == 'prod':
+		ranger = RangerClient(ranger_url, ranger_auth)
+	
+	ran = RangerPolicyMgm(ranger,args.env)
+	ran.get_policy_info(args.dbname,args.table,'cm_hive')
 	#ran.add_policy("sv_hadoop1","laksha122","sv_g_hadoop",'cm_hive')
 	#ran.add_policy("sv_hadoop","laksha","sv_g_hadoop",'cm_hive')
 	ran.update_policy("sv_hadoop","laksha","kudu",'cm_hive')

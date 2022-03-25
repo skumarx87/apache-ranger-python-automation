@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>{% block title %} Searching Unix account {% endblock %}</h1>
+           <form id='survey-form1' action="#">
+           <div class='form-input'>
+               Ente the Unix account name want to check:
+               <input type='text' name='uname' id='radio-btn'/>
+               <input  type="submit" value="Submit"> </span>
+           </div>
+           </form>
+	{% if groups %}
+		<table class="table">
+		<thead>
+		<tr>
+		<th>Unix account</th>
+		<th>groups</th>
+		</tr>
+		</thead>
+		<tbody>
+		<tr>
+		<td>{{ uname }}</td>
+		<td>
+		{% for group in groups %}
+			{{ group }}
+		{% endfor %}
+		</td>
+		</tr>
+		</tbody>
+		</table>
+		
+	{% endif %}
+{% endblock %}

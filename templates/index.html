@@ -1,0 +1,40 @@
+
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>{% block title %} Servic Now Incidents {% endblock %}</h1>
+    <table class="table">
+	<thead>
+	<tr>
+	<th>Title</th>
+	<th>Incident No</th>
+	<th>Created</th>
+	<th>Access Request</th>
+	<th>Content</th>
+	<th>Role Owner</th>
+	<th>Table Owner</th>
+	<th>Role Owner Approval Status</th>
+	<th>Table Owner Approval Status</th>
+	<th>Incident Status</th>
+	<th>Action</th>
+	 </tr>
+	</thead>
+	<tbody>
+    {% for post in posts %}
+ 	   <tr>
+            <td>{{ post['title'] }}</td>
+            <td>{{ post['incN'] }}</td>
+            <td>{{ post['cTime'] }}</td>
+            <td>{{ post['rType'] }}</td>
+            <td>{{ post['content'] }}</td>
+            <td>{{ post['tOwnerName'] }}</td>
+            <td>{{ post['rOwnerName'] }}</td>
+            <td>{{ post['rOwnerAppS'] }}</td>
+            <td>{{ post['tOwnerAppS'] }}</td>
+            <td>{{ post['incS'] }}</td>
+            <td class="editclss" style="color:red;"><a href="{{ url_for('edit', id=post['id']) }}">Edit</td>
+	   </tr>
+    {% endfor %}
+      </tbody>
+      </table>
+{% endblock %}
